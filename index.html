@@ -82,21 +82,24 @@
   .canvas-note { font-size: 11px; color: var(--muted); }
 
   .canvas {
-    background: var(--canvas-bg); border: 1px solid var(--border); border-radius: 10px; padding: 26px;
+    background: var(--canvas-bg); border: 1px solid var(--border); border-radius: 10px;
     position: relative; overflow: auto;
     background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 32px 32px;
   }
+  .stage { position: relative; width: 1200px; height: 720px; }
 
-  .gate-marker {
-    display: inline-flex; align-items: center; gap: 6px; border: 1px dashed #c7cbd4; color: var(--muted);
-    font-size: 10px; letter-spacing: 0.08em; border-radius: 6px; padding: 6px 12px; margin-bottom: 18px;
+  .gate-box {
+    position: absolute; width: 110px; height: 90px; border: 2px solid var(--danger);
+    border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   }
+  .gate-box .door {
+    width: 26px; height: 34px; border: 2px solid var(--danger); border-radius: 2px; position: relative;
+  }
+  .gate-box .door::after { content: ""; position: absolute; right: 4px; top: 15px; width: 3px; height: 3px; border-radius: 50%; background: var(--danger); }
+  .gate-box .glabel { font-size: 11px; font-weight: 700; color: var(--danger); letter-spacing: 0.04em; }
 
-  .pod-row { display: flex; gap: 26px; margin-bottom: 26px; flex-wrap: wrap; align-items: flex-start; }
-  .pod-block { display: flex; align-items: center; gap: 8px; }
-  .pod-label { font-size: 11px; color: var(--muted); font-weight: 600; width: 46px; flex-shrink: 0; }
-  .pod { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .pod-abs { position: absolute; display: grid; gap: 5px; }
 
   .seat {
     width: 44px; height: 34px; border-radius: 6px; font-size: 11px; font-weight: 700;
@@ -180,14 +183,31 @@ const FLOORS = [
 ];
 
 // Placeholder pod layouts — replace once real per-floor drawings are confirmed.
-// Basement is built from your sketch: 11 pods of 7 = 77 seats.
+// Basement: scattered clusters with breathing room, matching the hand-drawn
+// layout (not wall-to-wall rows). Coordinates are pixels on a 1200x720 stage.
+// Each pod: {x, y, cols, count} — seats numbered sequentially through the list.
 const POD_LAYOUT = {
-  BS: { gateSide: "top", rows: [
-    { label: "Row A", pods: [7, 7, 7] },
-    { label: "Row B", pods: [7, 7, 7] },
-    { label: "Row C", pods: [7, 7, 7] },
-    { label: "Row D", pods: [7, 7] },
-  ]},
+  BS: {
+    gate: { x: 980, y: 600, label: "Gate" },
+    pods: [
+      { x: 80,  y: 60,  cols: 2, count: 6 },
+      { x: 260, y: 60,  cols: 2, count: 6 },
+      { x: 460, y: 40,  cols: 2, count: 4 },
+      { x: 700, y: 30,  cols: 1, count: 3 },
+      { x: 80,  y: 260, cols: 2, count: 6 },
+      { x: 260, y: 260, cols: 2, count: 6 },
+      { x: 460, y: 260, cols: 2, count: 4 },
+      { x: 700, y: 260, cols: 1, count: 3 },
+      { x: 80,  y: 460, cols: 2, count: 6 },
+      { x: 260, y: 460, cols: 2, count: 6 },
+      { x: 460, y: 480, cols: 1, count: 2 },
+      { x: 700, y: 480, cols: 1, count: 2 },
+      { x: 900, y: 60,  cols: 2, count: 8 },
+      { x: 900, y: 300, cols: 2, count: 6 },
+      { x: 900, y: 460, cols: 2, count: 6 },
+      { x: 260, y: 620, cols: 2, count: 3 },
+    ],
+  },
 };
 
 let DATES = [], RECORDS = [], seatCounts = {};
@@ -292,26 +312,27 @@ function render() {
   let canvasHtml;
   if (layout) {
     let counter = 1;
-    const gate = layout.gateSide ? `<div class="gate-marker">GATE — ${layout.gateSide.toUpperCase()} SIDE</div>` : "";
-    const rowsHtml = layout.rows.map(row => {
-      const pods = row.pods.map(podSize => {
-        const btns = [];
-        for (let i=0; i<podSize; i++) {
-          const num = counter++;
-          if (visibleNums.has(num)) btns.push(seatHtml(seats.find(s=>s.num===num)));
-        }
-        return `<div class="pod">${btns.join("")}</div>`;
-      }).join("");
-      return `<div class="pod-row"><div class="pod-block"><span class="pod-label">${row.label}</span>${pods}</div></div>`;
+    const podsHtml = layout.pods.map(pod => {
+      const btns = [];
+      for (let i=0; i<pod.count; i++) {
+        const num = counter++;
+        if (visibleNums.has(num)) btns.push(seatHtml(seats.find(s=>s.num===num)));
+      }
+      return `<div class="pod-abs" style="left:${pod.x}px; top:${pod.y}px; grid-template-columns:repeat(${pod.cols},1fr)">${btns.join("")}</div>`;
     }).join("");
-    canvasHtml = gate + rowsHtml;
+    const gateHtml = layout.gate ? `
+      <div class="gate-box" style="left:${layout.gate.x}px; top:${layout.gate.y}px;">
+        <div class="door"></div>
+        <div class="glabel">${layout.gate.label}</div>
+      </div>` : "";
+    canvasHtml = `<div class="stage">${gateHtml}${podsHtml}</div>`;
   } else {
     const COLS = 12;
     const rowsHtml = [];
     for (let i=0;i<visible.length;i+=COLS) {
       rowsHtml.push(`<div class="pod-row"><div class="pod-block"><div class="pod" style="grid-template-columns:repeat(${COLS},1fr)">${visible.slice(i,i+COLS).map(seatHtml).join("")}</div></div></div>`);
     }
-    canvasHtml = rowsHtml.join("");
+    canvasHtml = `<div style="padding:26px">${rowsHtml.join("")}</div>`;
   }
 
   document.getElementById("canvas").innerHTML = canvasHtml;
