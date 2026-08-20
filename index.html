@@ -6,112 +6,169 @@
 <title>Floor Map — Live Seating</title>
 <style>
   :root {
-    --bg: #0b0d12;
-    --panel: #12151c;
-    --panel-border: #1f232d;
-    --grid-bg: #0e1117;
-    --grid-border: #1a1e27;
-    --text: #e6e8ec;
-    --muted: #6b7280;
-    --accent: #4f8cff;
-    --accent-dim: #1e2a44;
-    --occ-bg: #1c2333;
-    --occ-border: #2a3654;
-    --occ-text: #9db4e8;
-    --avail-bg: #141821;
-    --avail-border: #1e222c;
-    --avail-text: #4b5160;
-    --green: #22c55e;
+    --bg: #f5f6f8;
+    --canvas-bg: #ffffff;
+    --grid-line: #eef0f3;
+    --border: #e2e5ea;
+    --text: #1f2430;
+    --muted: #8a91a0;
+    --accent: #2f6fed;
+    --accent-bg: #eaf1ff;
+    --seat-occ-bg: #ffffff;
+    --seat-occ-border: #c7cbd4;
+    --seat-avail-bg: #eef0f3;
+    --seat-avail-border: #e2e5ea;
+    --seat-avail-text: #b2b7c2;
+    --danger: #e0555f;
+    --green: #1fa971;
+    --sidebar-w: 240px;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg);
     color: var(--text);
-    padding: 20px;
   }
-  .floor-tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
-  .floor-tab {
-    background: var(--panel); color: #9aa1ad; border: 1px solid var(--panel-border);
-    border-radius: 7px; padding: 8px 14px; font-size: 12px; font-weight: 600;
-    font-family: inherit; cursor: pointer; transition: all 0.12s ease;
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; background: #fff; border-bottom: 1px solid var(--border);
   }
-  .floor-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
-  .eyebrow { font-size: 11px; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 4px; }
-  .title { font-size: 22px; font-weight: 700; color: #fff; }
-  .date-picker { display: flex; gap: 8px; align-items: center; }
-  select {
-    background: #161a22; color: var(--text); border: 1px solid #2a2f3a; border-radius: 6px;
-    padding: 8px 12px; font-family: inherit; font-size: 13px; cursor: pointer;
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; }
+  .brand .mark { width: 22px; height: 22px; border-radius: 5px; background: var(--accent); }
+  .date-control { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .date-control select {
+    border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 13px;
+    background: #fff; color: var(--text); font-family: inherit; cursor: pointer;
   }
-  label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 18px; }
-  .stat-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px 14px; }
-  .stat-label { font-size: 10px; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
-  .stat-value { font-size: 22px; font-weight: 700; }
-  .stat-sub { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .shell { display: flex; min-height: calc(100vh - 49px); }
+  .sidebar { width: var(--sidebar-w); flex-shrink: 0; background: #fff; border-right: 1px solid var(--border); padding: 18px 16px; }
+  .site-card { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; }
+  .site-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .site-name { font-weight: 700; font-size: 14px; color: var(--accent); }
+  .site-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.03em; }
 
-  .filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-  .filter-btn {
-    background: var(--panel); color: #9aa1ad; border: 1px solid var(--panel-border);
-    border-radius: 6px; padding: 6px 12px; font-size: 12px; font-family: inherit; cursor: pointer;
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+  .stat-box { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .stat-box .l { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 4px; }
+  .stat-box .v { font-size: 20px; font-weight: 700; }
+  .stat-box .v.blue { color: var(--accent); }
+  .stat-box .v.green { color: var(--green); }
+  .stat-box .sub { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+  .nav-list { border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 18px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 7px;
+    font-size: 13px; color: #4b5160; cursor: pointer; margin-bottom: 2px; font-weight: 500;
   }
-  .filter-btn.active { background: var(--accent-dim); color: #7ea8ff; border-color: #3a5aa0; }
-  .note { margin-left: auto; font-size: 11px; color: #4b5160; }
+  .nav-item .dot { width: 7px; height: 7px; border-radius: 50%; background: #c7cbd4; }
+  .nav-item.active { background: var(--accent-bg); color: var(--accent); font-weight: 700; }
+  .nav-item.active .dot { background: var(--accent); }
+  .nav-item:hover:not(.active) { background: #f5f6f8; }
 
-  .layout { display: flex; gap: 16px; flex-wrap: wrap; }
-  .grid-panel { flex: 1 1 480px; background: var(--grid-bg); border: 1px solid var(--grid-border); border-radius: 10px; padding: 18px; overflow-x: auto; }
-  .grid-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .filter-block { border-top: 1px solid var(--border); padding-top: 14px; }
+  .filter-block .label { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 8px; }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px; font-size: 12px; margin-right: 6px; margin-bottom: 6px; cursor: pointer; color: #4b5160;
+  }
+  .filter-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+  .filter-chip .sw { width: 7px; height: 7px; border-radius: 50%; }
+
+  .main { flex: 1; padding: 22px; position: relative; }
+  .canvas-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .canvas-title { font-size: 11px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+  .canvas-note { font-size: 11px; color: var(--muted); }
+
+  .canvas {
+    background: var(--canvas-bg); border: 1px solid var(--border); border-radius: 10px; padding: 26px;
+    position: relative; overflow: auto;
+    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
 
   .gate-marker {
-    display: inline-flex; align-items: center; justify-content: center;
-    border: 1px dashed #3a4152; color: #6b7280; font-size: 10px; letter-spacing: 0.1em;
-    border-radius: 6px; padding: 6px 14px; margin-bottom: 14px;
+    display: inline-flex; align-items: center; gap: 6px; border: 1px dashed #c7cbd4; color: var(--muted);
+    font-size: 10px; letter-spacing: 0.08em; border-radius: 6px; padding: 6px 12px; margin-bottom: 18px;
   }
-  .pod-row { display: flex; gap: 22px; margin-bottom: 22px; flex-wrap: wrap; }
-  .pod {
-    background: #10131a; border: 1px solid var(--grid-border); border-radius: 8px;
-    padding: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
-    width: fit-content;
-  }
-  .seat-btn {
-    width: 38px; height: 34px; border-radius: 5px; font-size: 9px; font-weight: 600;
-    font-family: inherit; cursor: pointer; transition: all 0.12s ease; flex-shrink: 0;
-    background: var(--avail-bg); color: var(--avail-text); border: 1px solid var(--avail-border);
-  }
-  .seat-btn:hover { transform: translateY(-2px); }
-  .seat-btn.occupied { background: var(--occ-bg); color: var(--occ-text); border-color: var(--occ-border); }
-  .seat-btn.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-  .detail-panel { flex: 0 0 260px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 16px; height: fit-content; }
-  .detail-empty { color: var(--muted); font-size: 12px; line-height: 1.6; }
-  .detail-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .seat-id { font-size: 15px; font-weight: 700; color: #fff; }
-  .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
-  .badge.occ { background: var(--accent-dim); color: #7ea8ff; }
-  .badge.avail { background: #132a1c; color: #4ade80; }
-  .detail-rows { display: grid; gap: 8px; font-size: 12px; }
-  .detail-row { display: flex; justify-content: space-between; border-bottom: 1px solid #1c2028; padding-bottom: 6px; }
-  .detail-row .k { color: var(--muted); }
-  .detail-row .v { color: var(--text); font-weight: 600; text-align: right; max-width: 150px; }
-  .loading { color: var(--muted); font-size: 13px; padding: 40px; text-align: center; }
+  .pod-row { display: flex; gap: 26px; margin-bottom: 26px; flex-wrap: wrap; align-items: flex-start; }
+  .pod-block { display: flex; align-items: center; gap: 8px; }
+  .pod-label { font-size: 11px; color: var(--muted); font-weight: 600; width: 46px; flex-shrink: 0; }
+  .pod { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+
+  .seat {
+    width: 44px; height: 34px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all .12s ease; position: relative;
+    background: var(--seat-avail-bg); border: 1px solid var(--seat-avail-border); color: var(--seat-avail-text);
+  }
+  .seat:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .seat.occupied { background: var(--seat-occ-bg); border: 1px solid var(--seat-occ-border); color: #4b5160; }
+  .seat.selected { background: var(--accent); border-color: var(--accent); color: #fff; z-index: 2; }
+
+  .popover {
+    position: absolute; width: 230px; background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(20,24,34,0.14); padding: 14px; z-index: 20;
+  }
+  .popover-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .popover-head .id { font-weight: 700; font-size: 14px; }
+  .badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+  .badge.occ { background: var(--accent); color: #fff; }
+  .badge.avail { background: #e7f8f0; color: var(--green); }
+  .popover hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+  .prow { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; }
+  .prow .k { color: var(--muted); }
+  .prow .v { font-weight: 600; text-align: right; max-width: 140px; }
+  .popover-empty { font-size: 12px; color: var(--muted); }
+
+  .loading { padding: 60px; text-align: center; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
 
-<div id="app"><div class="loading">Loading live schedule…</div></div>
+<div class="topbar">
+  <div class="brand"><div class="mark"></div>Floor Map</div>
+  <div class="date-control">
+    <span style="color:var(--muted)">DATE</span>
+    <select id="date-select"></select>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="sidebar">
+    <div class="site-card">
+      <div class="site-icon">FM</div>
+      <div>
+        <div class="site-name" id="floor-title">Basement</div>
+        <div class="site-sub">LIVE FROM SHEET</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <div class="nav-list" id="floor-nav"></div>
+
+    <div class="filter-block">
+      <div class="label">FILTER STATUS</div>
+      <div id="filter-chips"></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="canvas-header">
+      <div class="canvas-title" id="canvas-title">ZONE BS — MAIN FLOOR</div>
+      <div class="canvas-note">Placeholder layout — will match the real drawing once confirmed</div>
+    </div>
+    <div class="canvas" id="canvas"><div class="loading">Loading live schedule…</div></div>
+  </div>
+</div>
 
 <script>
-// ---- CONFIGURE THIS ----
 const SHEET_ID = "1CLpBsyHLYL5BkjNKPhbWHqbvzaJu2BTzsA-ub0LBw9w";
 const GID = "0";
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
-const REFRESH_MS = 60000; // re-fetch every 60s
-// -------------------------
+const REFRESH_MS = 60000;
 
 const FLOORS = [
   { code: "F1", label: "Floor 1" },
@@ -121,46 +178,34 @@ const FLOORS = [
   { code: "F6", label: "Floor 6" },
   { code: "BS", label: "Basement" },
 ];
-const COLS = 12;
 
-// Placeholder pod layout for the basement, built from the hand-drawn sketch.
-// 11 pods of 7 seats = 77 seats, arranged in facing rows with an aisle, plus a gate.
-// Seat numbers are assigned sequentially through the pods (1..77) until real
-// per-desk labels are confirmed — adjust POD_LAYOUT.BS below once corrected.
+// Placeholder pod layouts — replace once real per-floor drawings are confirmed.
+// Basement is built from your sketch: 11 pods of 7 = 77 seats.
 const POD_LAYOUT = {
-  BS: {
-    gateSide: "top",
-    rows: [
-      { pods: [7, 7, 7] },
-      { pods: [7, 7, 7] },
-      { pods: [7, 7, 7] },
-      { pods: [7, 7] },
-    ],
-  },
+  BS: { gateSide: "top", rows: [
+    { label: "Row A", pods: [7, 7, 7] },
+    { label: "Row B", pods: [7, 7, 7] },
+    { label: "Row C", pods: [7, 7, 7] },
+    { label: "Row D", pods: [7, 7] },
+  ]},
 };
 
-let DATES = [];
-let RECORDS = []; // {dateIdx, zone, seatNum, agent, code, shift, leader, account}
-let seatCounts = {}; // zone -> max seat num seen
-
-let state = { floor: "F1", dateIdx: 0, filter: "all", selected: null };
+let DATES = [], RECORDS = [], seatCounts = {};
+let state = { floor: "BS", dateIdx: 0, filter: "all", selected: null };
 
 function parseCSV(text) {
-  // simple CSV parser handling quoted fields with commas
   const rows = [];
   let row = [], field = "", inQuotes = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQuotes = false;
-      } else field += c;
+      if (c === '"') { if (text[i+1] === '"') { field += '"'; i++; } else inQuotes = false; }
+      else field += c;
     } else {
       if (c === '"') inQuotes = true;
       else if (c === ',') { row.push(field); field = ""; }
       else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; }
-      else if (c === '\r') { /* skip */ }
+      else if (c === '\r') {}
       else field += c;
     }
   }
@@ -169,26 +214,20 @@ function parseCSV(text) {
 }
 
 function loadData() {
-  fetch(CSV_URL)
-    .then((r) => {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.text();
-    })
-    .then((text) => {
+  fetch(CSV_URL).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+    .then(text => {
       const rows = parseCSV(text);
       const header = rows[0];
       DATES = header.slice(10, 24);
-      RECORDS = [];
-      seatCounts = {};
-
+      RECORDS = []; seatCounts = {};
       for (let ri = 1; ri < rows.length; ri++) {
         const r = rows[ri];
         if (!r || r.length < 10) continue;
         const name = r[2], code = r[1], leader = r[3], account = r[5];
         for (let di = 0; di < DATES.length; di++) {
-          const cell = (r[10 + di] || "").trim();
+          const cell = (r[10+di] || "").trim();
           if (!cell.includes("|")) continue;
-          const [timePart, seatRaw] = cell.split("|").map((s) => s.trim());
+          const [timePart, seatRaw] = cell.split("|").map(s => s.trim());
           const m = seatRaw.match(/^([A-Za-z]+\d*)_(\d+)$/);
           if (!m) continue;
           const zone = m[1], num = parseInt(m[2], 10);
@@ -196,13 +235,20 @@ function loadData() {
           seatCounts[zone] = Math.max(seatCounts[zone] || 0, num);
         }
       }
+      populateDateSelect();
       render();
     })
-    .catch((err) => {
-      document.getElementById("app").innerHTML =
-        `<div class="loading">Couldn't load the sheet.<br>${err.message}<br><br>Check that the sheet's sharing is set to "Anyone with the link — Viewer".</div>`;
+    .catch(err => {
+      document.getElementById("canvas").innerHTML = `<div class="loading">Couldn't load the sheet.<br>${err.message}<br><br>Check sharing is "Anyone with the link — Viewer".</div>`;
       console.error(err);
     });
+}
+
+function populateDateSelect() {
+  const sel = document.getElementById("date-select");
+  if (sel.options.length) return;
+  sel.innerHTML = DATES.map((d,i) => `<option value="${i}" ${i===state.dateIdx?"selected":""}>${d}</option>`).join("");
+  sel.onchange = e => { state.dateIdx = Number(e.target.value); state.selected = null; render(); };
 }
 
 function render() {
@@ -211,150 +257,126 @@ function render() {
   const dateIdx = state.dateIdx;
 
   const seatMap = new Map();
-  for (const rec of RECORDS) {
-    if (rec.dateIdx === dateIdx && rec.zone === floor) seatMap.set(rec.seatNum, rec);
-  }
+  for (const rec of RECORDS) if (rec.dateIdx === dateIdx && rec.zone === floor) seatMap.set(rec.seatNum, rec);
 
-  const seats = Array.from({ length: maxSeat }, (_, i) => i + 1).map((num) => ({
-    num, record: seatMap.get(num) || null,
-  }));
-
-  const occupied = seats.filter((s) => s.record).length;
+  const seats = Array.from({length: maxSeat}, (_,i)=>i+1).map(num => ({num, record: seatMap.get(num) || null}));
+  const occupied = seats.filter(s=>s.record).length;
   const available = maxSeat - occupied;
-  const pct = maxSeat ? Math.round((occupied / maxSeat) * 100) : 0;
-  const accounts = new Set(Array.from(seatMap.values()).map((r) => r.account)).size;
+  const pct = maxSeat ? Math.round(occupied/maxSeat*100) : 0;
+  const accounts = new Set(Array.from(seatMap.values()).map(r=>r.account)).size;
 
-  const visible =
-    state.filter === "all" ? seats :
-    state.filter === "occupied" ? seats.filter((s) => s.record) :
-    seats.filter((s) => !s.record);
+  document.getElementById("floor-title").textContent = FLOORS.find(f=>f.code===floor).label;
+  document.getElementById("canvas-title").textContent = `ZONE ${floor} — MAIN FLOOR`;
 
-  window.__currentSeats = seats;
-  const pods = POD_LAYOUT[floor];
-  let gridHtml;
-  if (pods) {
-    gridHtml = renderPodGrid(pods, visible);
-  } else {
-    const rowsHtml = [];
-    for (let i = 0; i < visible.length; i += COLS) {
-      const chunk = visible.slice(i, i + COLS);
-      rowsHtml.push(`<div class="grid-row">${chunk.map(seatBtnHtml).join("")}</div>`);
-    }
-    gridHtml = rowsHtml.join("");
-  }
-
-  const sel = state.selected;
-  const selSeat = sel ? seats.find((s) => s.num === sel) : null;
-
-  document.getElementById("app").innerHTML = `
-    <div class="floor-tabs">
-      ${FLOORS.map(f => `<button class="floor-tab ${f.code === floor ? "active" : ""}" data-floor="${f.code}">${f.label}</button>`).join("")}
-    </div>
-
-    <div class="header">
-      <div>
-        <div class="eyebrow">ZONE ${floor} · LIVE FROM SHEET</div>
-        <div class="title">${FLOORS.find(f => f.code === floor).label} Floor Map</div>
-      </div>
-      <div class="date-picker">
-        <label>DATE</label>
-        <select id="date-select">
-          ${DATES.map((d, i) => `<option value="${i}" ${i === dateIdx ? "selected" : ""}>${d}</option>`).join("")}
-        </select>
-      </div>
-    </div>
-
-    <div class="stats">
-      <div class="stat-card"><div class="stat-label">TOTAL SEATS</div><div class="stat-value">${maxSeat}</div></div>
-      <div class="stat-card"><div class="stat-label">OCCUPIED</div><div class="stat-value" style="color:var(--accent)">${occupied} <span class="stat-sub">${pct}%</span></div></div>
-      <div class="stat-card"><div class="stat-label">AVAILABLE</div><div class="stat-value" style="color:var(--green)">${available}</div></div>
-      <div class="stat-card"><div class="stat-label">ACCOUNTS</div><div class="stat-value">${accounts}</div></div>
-    </div>
-
-    <div class="filters">
-      <button class="filter-btn ${state.filter === "all" ? "active" : ""}" data-filter="all">All seats</button>
-      <button class="filter-btn ${state.filter === "occupied" ? "active" : ""}" data-filter="occupied">Occupied</button>
-      <button class="filter-btn ${state.filter === "available" ? "active" : ""}" data-filter="available">Available</button>
-      <div class="note">Placeholder grid — will match the real floor drawing once received</div>
-    </div>
-
-    <div class="layout">
-      <div class="grid-panel">${gridHtml}</div>
-      <div class="detail-panel">
-        ${sel === null ? `<div class="detail-empty">Click a seat to see agent, shift, and account for the selected date.</div>` :
-          selSeat.record ? `
-            <div class="detail-head">
-              <div class="seat-id">${floor}_${String(sel).padStart(3, "0")}</div>
-              <span class="badge occ">OCCUPIED</span>
-            </div>
-            <div class="detail-rows">
-              <div class="detail-row"><span class="k">Agent</span><span class="v">${selSeat.record.agent}</span></div>
-              <div class="detail-row"><span class="k">Agent code</span><span class="v">#${selSeat.record.code}</span></div>
-              <div class="detail-row"><span class="k">Shift</span><span class="v">${selSeat.record.shift}</span></div>
-              <div class="detail-row"><span class="k">Team leader</span><span class="v">${selSeat.record.leader}</span></div>
-              <div class="detail-row"><span class="k">Account</span><span class="v">${selSeat.record.account}</span></div>
-              <div class="detail-row"><span class="k">Date</span><span class="v">${DATES[dateIdx]}</span></div>
-            </div>` : `
-            <div class="detail-head">
-              <div class="seat-id">${floor}_${String(sel).padStart(3, "0")}</div>
-              <span class="badge avail">AVAILABLE</span>
-            </div>
-            <div class="detail-empty">No agent assigned to this seat on ${DATES[dateIdx]}.</div>`
-        }
-      </div>
-    </div>
+  document.getElementById("stat-grid").innerHTML = `
+    <div class="stat-box"><div class="l">TOTAL SEATS</div><div class="v">${maxSeat}</div></div>
+    <div class="stat-box"><div class="l">OCCUPIED</div><div class="v blue">${occupied} <span class="sub">${pct}%</span></div></div>
+    <div class="stat-box"><div class="l">AVAILABLE</div><div class="v green">${available}</div></div>
+    <div class="stat-box"><div class="l">ACCOUNTS</div><div class="v">${accounts}</div></div>
   `;
 
-  // wire events
-  document.querySelectorAll(".floor-tab").forEach(btn => {
-    btn.onclick = () => { state.floor = btn.dataset.floor; state.selected = null; render(); };
-  });
-  document.querySelectorAll(".filter-btn").forEach(btn => {
-    btn.onclick = () => { state.filter = btn.dataset.filter; render(); };
-  });
-  document.getElementById("date-select").onchange = (e) => {
-    state.dateIdx = Number(e.target.value); state.selected = null; render();
-  };
-  document.querySelectorAll(".seat-btn").forEach(btn => {
-    btn.onclick = () => {
+  document.getElementById("floor-nav").innerHTML = FLOORS.map(f => `
+    <div class="nav-item ${f.code===floor?"active":""}" data-floor="${f.code}"><span class="dot"></span>${f.label}</div>
+  `).join("");
+
+  document.getElementById("filter-chips").innerHTML = `
+    <span class="filter-chip ${state.filter==='occupied'?'active':''}" data-filter="occupied"><span class="sw" style="background:#2f6fed"></span>Occupied</span>
+    <span class="filter-chip ${state.filter==='available'?'active':''}" data-filter="available"><span class="sw" style="background:#c7cbd4"></span>Available</span>
+    <span class="filter-chip ${state.filter==='all'?'active':''}" data-filter="all">All</span>
+  `;
+
+  const visible = state.filter === "all" ? seats : state.filter === "occupied" ? seats.filter(s=>s.record) : seats.filter(s=>!s.record);
+  const visibleNums = new Set(visible.map(s=>s.num));
+
+  const layout = POD_LAYOUT[floor];
+  let canvasHtml;
+  if (layout) {
+    let counter = 1;
+    const gate = layout.gateSide ? `<div class="gate-marker">GATE — ${layout.gateSide.toUpperCase()} SIDE</div>` : "";
+    const rowsHtml = layout.rows.map(row => {
+      const pods = row.pods.map(podSize => {
+        const btns = [];
+        for (let i=0; i<podSize; i++) {
+          const num = counter++;
+          if (visibleNums.has(num)) btns.push(seatHtml(seats.find(s=>s.num===num)));
+        }
+        return `<div class="pod">${btns.join("")}</div>`;
+      }).join("");
+      return `<div class="pod-row"><div class="pod-block"><span class="pod-label">${row.label}</span>${pods}</div></div>`;
+    }).join("");
+    canvasHtml = gate + rowsHtml;
+  } else {
+    const COLS = 12;
+    const rowsHtml = [];
+    for (let i=0;i<visible.length;i+=COLS) {
+      rowsHtml.push(`<div class="pod-row"><div class="pod-block"><div class="pod" style="grid-template-columns:repeat(${COLS},1fr)">${visible.slice(i,i+COLS).map(seatHtml).join("")}</div></div></div>`);
+    }
+    canvasHtml = rowsHtml.join("");
+  }
+
+  document.getElementById("canvas").innerHTML = canvasHtml;
+
+  // wire seat clicks
+  document.querySelectorAll(".seat").forEach(btn => {
+    btn.onclick = (e) => {
       const num = Number(btn.dataset.num);
-      state.selected = state.selected === num ? null : num;
-      render();
+      if (state.selected === num) { state.selected = null; closePopover(); return; }
+      state.selected = num;
+      renderSeatStates();
+      showPopover(btn, seats.find(s=>s.num===num), floor, dateIdx);
     };
   });
+
+  document.querySelectorAll(".nav-item").forEach(el => {
+    el.onclick = () => { state.floor = el.dataset.floor; state.selected = null; render(); };
+  });
+  document.querySelectorAll(".filter-chip").forEach(el => {
+    el.onclick = () => { state.filter = el.dataset.filter; state.selected = null; render(); };
+  });
+
+  renderSeatStates();
 }
 
-function renderPodGrid(layout, visibleSeats) {
-  const visibleNums = new Set(visibleSeats.map((s) => s.num));
-  let counter = 1;
-  const gate = layout.gateSide
-    ? `<div class="gate-marker">GATE — ${layout.gateSide.toUpperCase()} SIDE (placeholder position)</div><br/>`
-    : "";
-  const rowsHtml = layout.rows.map((row) => {
-    const podsHtml = row.pods.map((podSize) => {
-      const btns = [];
-      for (let i = 0; i < podSize; i++) {
-        const num = counter++;
-        if (visibleNums.has(num)) btns.push(seatBtnHtml({ num, record: seatRecordByNum(num) }));
-      }
-      return `<div class="pod">${btns.join("")}</div>`;
-    }).join("");
-    return `<div class="pod-row">${podsHtml}</div>`;
-  }).join("");
-  return gate + rowsHtml;
+function renderSeatStates() {
+  document.querySelectorAll(".seat").forEach(btn => {
+    const num = Number(btn.dataset.num);
+    btn.classList.toggle("selected", state.selected === num);
+  });
 }
 
-function seatRecordByNum(num) {
-  const seats = window.__currentSeats || [];
-  const found = seats.find((s) => s.num === num);
-  return found ? found.record : null;
+function seatHtml(seat) {
+  const occ = !!seat.record;
+  return `<button class="seat ${occ?"occupied":""}" data-num="${seat.num}">${seat.num}</button>`;
 }
 
-function seatBtnHtml(seat) {
-  const isSelected = state.selected === seat.num;
-  const isOccupied = !!seat.record;
-  const cls = ["seat-btn", isOccupied ? "occupied" : "", isSelected ? "selected" : ""].filter(Boolean).join(" ");
-  return `<button class="${cls}" data-num="${seat.num}" title="F_${seat.num}">${seat.num}</button>`;
+let popoverEl = null;
+function closePopover() { if (popoverEl) { popoverEl.remove(); popoverEl = null; } }
+
+function showPopover(btn, seat, floor, dateIdx) {
+  closePopover();
+  const rect = btn.getBoundingClientRect();
+  const canvasRect = document.getElementById("canvas").getBoundingClientRect();
+  const el = document.createElement("div");
+  el.className = "popover";
+  el.style.left = Math.min(rect.left - canvasRect.left + document.getElementById("canvas").scrollLeft + 46, document.getElementById("canvas").scrollWidth - 240) + "px";
+  el.style.top = (rect.top - canvasRect.top + document.getElementById("canvas").scrollTop) + "px";
+
+  const rec = seat.record;
+  const seatId = `${floor}_${String(seat.num).padStart(3,"0")}`;
+  el.innerHTML = rec ? `
+    <div class="popover-head"><span class="id">${seatId}</span><span class="badge occ">OCCUPIED</span></div>
+    <div class="prow"><span class="k">Agent</span><span class="v">${rec.agent}</span></div>
+    <div class="prow"><span class="k">Agent code</span><span class="v">#${rec.code}</span></div>
+    <div class="prow"><span class="k">Shift</span><span class="v">${rec.shift}</span></div>
+    <div class="prow"><span class="k">Team leader</span><span class="v">${rec.leader}</span></div>
+    <div class="prow"><span class="k">Account</span><span class="v">${rec.account}</span></div>
+    <div class="prow"><span class="k">Date</span><span class="v">${DATES[dateIdx]}</span></div>
+  ` : `
+    <div class="popover-head"><span class="id">${seatId}</span><span class="badge avail">AVAILABLE</span></div>
+    <div class="popover-empty">No agent assigned on ${DATES[dateIdx]}.</div>
+  `;
+  document.getElementById("canvas").appendChild(el);
+  popoverEl = el;
 }
 
 loadData();
