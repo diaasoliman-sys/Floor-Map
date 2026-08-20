@@ -66,6 +66,18 @@
   .layout { display: flex; gap: 16px; flex-wrap: wrap; }
   .grid-panel { flex: 1 1 480px; background: var(--grid-bg); border: 1px solid var(--grid-border); border-radius: 10px; padding: 18px; overflow-x: auto; }
   .grid-row { display: flex; gap: 6px; margin-bottom: 6px; }
+
+  .gate-marker {
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px dashed #3a4152; color: #6b7280; font-size: 10px; letter-spacing: 0.1em;
+    border-radius: 6px; padding: 6px 14px; margin-bottom: 14px;
+  }
+  .pod-row { display: flex; gap: 22px; margin-bottom: 22px; flex-wrap: wrap; }
+  .pod {
+    background: #10131a; border: 1px solid var(--grid-border); border-radius: 8px;
+    padding: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+    width: fit-content;
+  }
   .seat-btn {
     width: 38px; height: 34px; border-radius: 5px; font-size: 9px; font-weight: 600;
     font-family: inherit; cursor: pointer; transition: all 0.12s ease; flex-shrink: 0;
@@ -110,6 +122,22 @@ const FLOORS = [
   { code: "BS", label: "Basement" },
 ];
 const COLS = 12;
+
+// Placeholder pod layout for the basement, built from the hand-drawn sketch.
+// 11 pods of 7 seats = 77 seats, arranged in facing rows with an aisle, plus a gate.
+// Seat numbers are assigned sequentially through the pods (1..77) until real
+// per-desk labels are confirmed — adjust POD_LAYOUT.BS below once corrected.
+const POD_LAYOUT = {
+  BS: {
+    gateSide: "top",
+    rows: [
+      { pods: [7, 7, 7] },
+      { pods: [7, 7, 7] },
+      { pods: [7, 7, 7] },
+      { pods: [7, 7] },
+    ],
+  },
+};
 
 let DATES = [];
 let RECORDS = []; // {dateIdx, zone, seatNum, agent, code, shift, leader, account}
@@ -201,10 +229,18 @@ function render() {
     state.filter === "occupied" ? seats.filter((s) => s.record) :
     seats.filter((s) => !s.record);
 
-  const rowsHtml = [];
-  for (let i = 0; i < visible.length; i += COLS) {
-    const chunk = visible.slice(i, i + COLS);
-    rowsHtml.push(`<div class="grid-row">${chunk.map(seatBtnHtml).join("")}</div>`);
+  window.__currentSeats = seats;
+  const pods = POD_LAYOUT[floor];
+  let gridHtml;
+  if (pods) {
+    gridHtml = renderPodGrid(pods, visible);
+  } else {
+    const rowsHtml = [];
+    for (let i = 0; i < visible.length; i += COLS) {
+      const chunk = visible.slice(i, i + COLS);
+      rowsHtml.push(`<div class="grid-row">${chunk.map(seatBtnHtml).join("")}</div>`);
+    }
+    gridHtml = rowsHtml.join("");
   }
 
   const sel = state.selected;
@@ -243,7 +279,7 @@ function render() {
     </div>
 
     <div class="layout">
-      <div class="grid-panel">${rowsHtml.join("")}</div>
+      <div class="grid-panel">${gridHtml}</div>
       <div class="detail-panel">
         ${sel === null ? `<div class="detail-empty">Click a seat to see agent, shift, and account for the selected date.</div>` :
           selSeat.record ? `
@@ -286,6 +322,32 @@ function render() {
       render();
     };
   });
+}
+
+function renderPodGrid(layout, visibleSeats) {
+  const visibleNums = new Set(visibleSeats.map((s) => s.num));
+  let counter = 1;
+  const gate = layout.gateSide
+    ? `<div class="gate-marker">GATE — ${layout.gateSide.toUpperCase()} SIDE (placeholder position)</div><br/>`
+    : "";
+  const rowsHtml = layout.rows.map((row) => {
+    const podsHtml = row.pods.map((podSize) => {
+      const btns = [];
+      for (let i = 0; i < podSize; i++) {
+        const num = counter++;
+        if (visibleNums.has(num)) btns.push(seatBtnHtml({ num, record: seatRecordByNum(num) }));
+      }
+      return `<div class="pod">${btns.join("")}</div>`;
+    }).join("");
+    return `<div class="pod-row">${podsHtml}</div>`;
+  }).join("");
+  return gate + rowsHtml;
+}
+
+function seatRecordByNum(num) {
+  const seats = window.__currentSeats || [];
+  const found = seats.find((s) => s.num === num);
+  return found ? found.record : null;
 }
 
 function seatBtnHtml(seat) {
