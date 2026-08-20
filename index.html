@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Floor Map — Live Seating</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #12151c;
+    --panel-border: #1f232d;
+    --grid-bg: #0e1117;
+    --grid-border: #1a1e27;
+    --text: #e6e8ec;
+    --muted: #6b7280;
+    --accent: #4f8cff;
+    --accent-dim: #1e2a44;
+    --occ-bg: #1c2333;
+    --occ-border: #2a3654;
+    --occ-text: #9db4e8;
+    --avail-bg: #141821;
+    --avail-border: #1e222c;
+    --avail-text: #4b5160;
+    --green: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+  }
+  .floor-tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .floor-tab {
+    background: var(--panel); color: #9aa1ad; border: 1px solid var(--panel-border);
+    border-radius: 7px; padding: 8px 14px; font-size: 12px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: all 0.12s ease;
+  }
+  .floor-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 4px; }
+  .title { font-size: 22px; font-weight: 700; color: #fff; }
+  .date-picker { display: flex; gap: 8px; align-items: center; }
+  select {
+    background: #161a22; color: var(--text); border: 1px solid #2a2f3a; border-radius: 6px;
+    padding: 8px 12px; font-family: inherit; font-size: 13px; cursor: pointer;
+  }
+  label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 12px 14px; }
+  .stat-label { font-size: 10px; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 700; }
+  .stat-sub { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  .filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .filter-btn {
+    background: var(--panel); color: #9aa1ad; border: 1px solid var(--panel-border);
+    border-radius: 6px; padding: 6px 12px; font-size: 12px; font-family: inherit; cursor: pointer;
+  }
+  .filter-btn.active { background: var(--accent-dim); color: #7ea8ff; border-color: #3a5aa0; }
+  .note { margin-left: auto; font-size: 11px; color: #4b5160; }
+
+  .layout { display: flex; gap: 16px; flex-wrap: wrap; }
+  .grid-panel { flex: 1 1 480px; background: var(--grid-bg); border: 1px solid var(--grid-border); border-radius: 10px; padding: 18px; overflow-x: auto; }
+  .grid-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .seat-btn {
+    width: 38px; height: 34px; border-radius: 5px; font-size: 9px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: all 0.12s ease; flex-shrink: 0;
+    background: var(--avail-bg); color: var(--avail-text); border: 1px solid var(--avail-border);
+  }
+  .seat-btn:hover { transform: translateY(-2px); }
+  .seat-btn.occupied { background: var(--occ-bg); color: var(--occ-text); border-color: var(--occ-border); }
+  .seat-btn.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .detail-panel { flex: 0 0 260px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px; padding: 16px; height: fit-content; }
+  .detail-empty { color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .detail-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .seat-id { font-size: 15px; font-weight: 700; color: #fff; }
+  .badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+  .badge.occ { background: var(--accent-dim); color: #7ea8ff; }
+  .badge.avail { background: #132a1c; color: #4ade80; }
+  .detail-rows { display: grid; gap: 8px; font-size: 12px; }
+  .detail-row { display: flex; justify-content: space-between; border-bottom: 1px solid #1c2028; padding-bottom: 6px; }
+  .detail-row .k { color: var(--muted); }
+  .detail-row .v { color: var(--text); font-weight: 600; text-align: right; max-width: 150px; }
+  .loading { color: var(--muted); font-size: 13px; padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="app"><div class="loading">Loading live schedule…</div></div>
+
+<script>
+// ---- CONFIGURE THIS ----
+const SHEET_ID = "1CLpBsyHLYL5BkjNKPhbWHqbvzaJu2BTzsA-ub0LBw9w";
+const GID = "0";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const REFRESH_MS = 60000; // re-fetch every 60s
+// -------------------------
+
+const FLOORS = [
+  { code: "F1", label: "Floor 1" },
+  { code: "F2", label: "Floor 2" },
+  { code: "F4", label: "Floor 4" },
+  { code: "F5", label: "Floor 5" },
+  { code: "F6", label: "Floor 6" },
+  { code: "BS", label: "Basement" },
+];
+const COLS = 12;
+
+let DATES = [];
+let RECORDS = []; // {dateIdx, zone, seatNum, agent, code, shift, leader, account}
+let seatCounts = {}; // zone -> max seat num seen
+
+let state = { floor: "F1", dateIdx: 0, filter: "all", selected: null };
+
+function parseCSV(text) {
+  // simple CSV parser handling quoted fields with commas
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ""; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c === '\r') { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function loadData() {
+  fetch(CSV_URL)
+    .then((r) => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    })
+    .then((text) => {
+      const rows = parseCSV(text);
+      const header = rows[0];
+      DATES = header.slice(10, 24);
+      RECORDS = [];
+      seatCounts = {};
+
+      for (let ri = 1; ri < rows.length; ri++) {
+        const r = rows[ri];
+        if (!r || r.length < 10) continue;
+        const name = r[2], code = r[1], leader = r[3], account = r[5];
+        for (let di = 0; di < DATES.length; di++) {
+          const cell = (r[10 + di] || "").trim();
+          if (!cell.includes("|")) continue;
+          const [timePart, seatRaw] = cell.split("|").map((s) => s.trim());
+          const m = seatRaw.match(/^([A-Za-z]+\d*)_(\d+)$/);
+          if (!m) continue;
+          const zone = m[1], num = parseInt(m[2], 10);
+          RECORDS.push({ dateIdx: di, zone, seatNum: num, agent: name, code, shift: timePart, leader, account });
+          seatCounts[zone] = Math.max(seatCounts[zone] || 0, num);
+        }
+      }
+      render();
+    })
+    .catch((err) => {
+      document.getElementById("app").innerHTML =
+        `<div class="loading">Couldn't load the sheet.<br>${err.message}<br><br>Check that the sheet's sharing is set to "Anyone with the link — Viewer".</div>`;
+      console.error(err);
+    });
+}
+
+function render() {
+  const floor = state.floor;
+  const maxSeat = seatCounts[floor] || 0;
+  const dateIdx = state.dateIdx;
+
+  const seatMap = new Map();
+  for (const rec of RECORDS) {
+    if (rec.dateIdx === dateIdx && rec.zone === floor) seatMap.set(rec.seatNum, rec);
+  }
+
+  const seats = Array.from({ length: maxSeat }, (_, i) => i + 1).map((num) => ({
+    num, record: seatMap.get(num) || null,
+  }));
+
+  const occupied = seats.filter((s) => s.record).length;
+  const available = maxSeat - occupied;
+  const pct = maxSeat ? Math.round((occupied / maxSeat) * 100) : 0;
+  const accounts = new Set(Array.from(seatMap.values()).map((r) => r.account)).size;
+
+  const visible =
+    state.filter === "all" ? seats :
+    state.filter === "occupied" ? seats.filter((s) => s.record) :
+    seats.filter((s) => !s.record);
+
+  const rowsHtml = [];
+  for (let i = 0; i < visible.length; i += COLS) {
+    const chunk = visible.slice(i, i + COLS);
+    rowsHtml.push(`<div class="grid-row">${chunk.map(seatBtnHtml).join("")}</div>`);
+  }
+
+  const sel = state.selected;
+  const selSeat = sel ? seats.find((s) => s.num === sel) : null;
+
+  document.getElementById("app").innerHTML = `
+    <div class="floor-tabs">
+      ${FLOORS.map(f => `<button class="floor-tab ${f.code === floor ? "active" : ""}" data-floor="${f.code}">${f.label}</button>`).join("")}
+    </div>
+
+    <div class="header">
+      <div>
+        <div class="eyebrow">ZONE ${floor} · LIVE FROM SHEET</div>
+        <div class="title">${FLOORS.find(f => f.code === floor).label} Floor Map</div>
+      </div>
+      <div class="date-picker">
+        <label>DATE</label>
+        <select id="date-select">
+          ${DATES.map((d, i) => `<option value="${i}" ${i === dateIdx ? "selected" : ""}>${d}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="stat-label">TOTAL SEATS</div><div class="stat-value">${maxSeat}</div></div>
+      <div class="stat-card"><div class="stat-label">OCCUPIED</div><div class="stat-value" style="color:var(--accent)">${occupied} <span class="stat-sub">${pct}%</span></div></div>
+      <div class="stat-card"><div class="stat-label">AVAILABLE</div><div class="stat-value" style="color:var(--green)">${available}</div></div>
+      <div class="stat-card"><div class="stat-label">ACCOUNTS</div><div class="stat-value">${accounts}</div></div>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn ${state.filter === "all" ? "active" : ""}" data-filter="all">All seats</button>
+      <button class="filter-btn ${state.filter === "occupied" ? "active" : ""}" data-filter="occupied">Occupied</button>
+      <button class="filter-btn ${state.filter === "available" ? "active" : ""}" data-filter="available">Available</button>
+      <div class="note">Placeholder grid — will match the real floor drawing once received</div>
+    </div>
+
+    <div class="layout">
+      <div class="grid-panel">${rowsHtml.join("")}</div>
+      <div class="detail-panel">
+        ${sel === null ? `<div class="detail-empty">Click a seat to see agent, shift, and account for the selected date.</div>` :
+          selSeat.record ? `
+            <div class="detail-head">
+              <div class="seat-id">${floor}_${String(sel).padStart(3, "0")}</div>
+              <span class="badge occ">OCCUPIED</span>
+            </div>
+            <div class="detail-rows">
+              <div class="detail-row"><span class="k">Agent</span><span class="v">${selSeat.record.agent}</span></div>
+              <div class="detail-row"><span class="k">Agent code</span><span class="v">#${selSeat.record.code}</span></div>
+              <div class="detail-row"><span class="k">Shift</span><span class="v">${selSeat.record.shift}</span></div>
+              <div class="detail-row"><span class="k">Team leader</span><span class="v">${selSeat.record.leader}</span></div>
+              <div class="detail-row"><span class="k">Account</span><span class="v">${selSeat.record.account}</span></div>
+              <div class="detail-row"><span class="k">Date</span><span class="v">${DATES[dateIdx]}</span></div>
+            </div>` : `
+            <div class="detail-head">
+              <div class="seat-id">${floor}_${String(sel).padStart(3, "0")}</div>
+              <span class="badge avail">AVAILABLE</span>
+            </div>
+            <div class="detail-empty">No agent assigned to this seat on ${DATES[dateIdx]}.</div>`
+        }
+      </div>
+    </div>
+  `;
+
+  // wire events
+  document.querySelectorAll(".floor-tab").forEach(btn => {
+    btn.onclick = () => { state.floor = btn.dataset.floor; state.selected = null; render(); };
+  });
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.onclick = () => { state.filter = btn.dataset.filter; render(); };
+  });
+  document.getElementById("date-select").onchange = (e) => {
+    state.dateIdx = Number(e.target.value); state.selected = null; render();
+  };
+  document.querySelectorAll(".seat-btn").forEach(btn => {
+    btn.onclick = () => {
+      const num = Number(btn.dataset.num);
+      state.selected = state.selected === num ? null : num;
+      render();
+    };
+  });
+}
+
+function seatBtnHtml(seat) {
+  const isSelected = state.selected === seat.num;
+  const isOccupied = !!seat.record;
+  const cls = ["seat-btn", isOccupied ? "occupied" : "", isSelected ? "selected" : ""].filter(Boolean).join(" ");
+  return `<button class="${cls}" data-num="${seat.num}" title="F_${seat.num}">${seat.num}</button>`;
+}
+
+loadData();
+setInterval(loadData, REFRESH_MS);
+</script>
+</body>
+</html>
